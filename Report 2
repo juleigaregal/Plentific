@@ -19,7 +19,7 @@ MIN(PRICE) AS MINIMUMPRICE,PostCode,
 left(transferdate, 7) as [dates]
 ,ntile(@intervals) OVER( order by(price) asc) as rown
 INTO #maxmin
-FROM DBO.[pp-complete2]
+FROM DBO.[pp]
 WHERE postcode = @postcode 
 GROUP BY POSTCODE, 
 left(transferdate, 7),
@@ -32,7 +32,7 @@ PostCode,
 left(transferdate, 7) as [dates]
 
 INTO #limits 
-FROM DBO.[pp-complete2]
+FROM DBO.[pp]
 WHERE -- filtering by postal code to limit number of transactions for the exercise.
 postcode = @postcode 
 --and 
@@ -78,7 +78,7 @@ f2.LOW_Range,
 f2.High_Range,
 f2.postcode 
 INTO #transactions 
-FROM dbo.[pp-complete2] pp2
+FROM dbo.[pp] pp2
 INNER JOIN #final2 f2 on f2.PostCode = pp2.PostCode and f2.dates = left(transferdate, 7)
 AND pp2.Price BETWEEN LOW_Range AND High_Range
 WHERE f2.postcode IS NOT NULL
@@ -98,15 +98,8 @@ postcode
 ORDER BY dates ASC
 
 DROP TABLE  #maxmin
- 
 DROP TABLE #limits
- 
 DROP TABLE #final
-
 DROP TABLE #final2
-
- 
 DROP TABLE #transactions
-
- 
 DROP TABLE #recursive
