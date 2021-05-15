@@ -1,0 +1,112 @@
+if object_id('tempdb..#MAXMIN') is not null drop table #MAXMIN
+if object_id('tempdb..#LIMITS') is not null drop table #LIMITS
+if object_id('tempdb..#RECURSIVE') is not null drop table #RECURSIVE
+if object_id('tempdb..#TRANSACTIONS') is not null drop table #TRANSACTIONS
+if object_id('tempdb..#FINAL2') is not null drop table #FINAL2
+if object_id('tempdb..#FINAL') is not null drop table #FINAL
+
+
+DECLARE @postcode varchar(10)
+SET @postcode = 'SW8 2PH'
+--declare @dates varchar(7)
+--set @dates = '1995-02'
+DECLARE @intervals int
+SET @intervals = 8
+
+--DETERMINING UPPER AND LOWER LIMITS OF PRICES BY DATES, AND POSTALCODE
+SELECT MAX(PRICE) AS MAXIMUMPRICE , 
+MIN(PRICE) AS MINIMUMPRICE,PostCode,
+left(transferdate, 7) as [dates]
+,ntile(@intervals) OVER( order by(price) asc) as rown
+INTO #maxmin
+FROM DBO.[pp-complete2]
+WHERE postcode = @postcode 
+GROUP BY POSTCODE, 
+left(transferdate, 7),
+price
+
+
+SELECT MAX(PRICE) AS MAXIMUMPRICE , -- determining upper range of property price
+MIN(PRICE) AS MINIMUMPRICE, -- determining lower range of property
+PostCode,
+left(transferdate, 7) as [dates]
+
+INTO #limits 
+FROM DBO.[pp-complete2]
+WHERE -- filtering by postal code to limit number of transactions for the exercise.
+postcode = @postcode 
+--and 
+--left(transferdate, 7)= @dates
+GROUP BY POSTCODE, 
+left(transferdate, 7)
+
+
+SELECT DISTINCT  m.postcode,
+m.dates, 
+rown, 
+l.MAXIMUMPRICE, 
+l.MINIMUMPRICE, 
+l.MAXIMUMPRICE/@intervals as intervals -- segmenting the ranges into buckets of 8
+INTO #recursive 
+FROM #maxmin m
+INNER JOIN #limits l on l.PostCode = m.postcode and l.dates = m.dates
+
+
+--ACCUMULATIVE UPPER AND LOWER RANGES FOR PRICE BRACKETS
+SELECT r1.intervals, 
+r1.postcode, 
+r1.rown, 
+r1.dates, 
+r1.MINIMUMPRICE, 
+r1.intervals*r1.rown+1 as lower_range,
+r2.intervals+r1.intervals*r1.rown as upper_range 
+INTO #final 
+FROM #recursive r1
+LEFT JOIN #recursive r2 on r2.rown = r1.rown-1 and r1.dates = r2.dates and r1.PostCode = r2.PostCode
+
+SELECT * , 
+CASE WHEN lower_range = intervals+1 THEN minimumprice ELSE lower_range END AS LOW_Range,
+CASE WHEN upper_range is null THEN lower_range+intervals-1 else upper_range END AS High_Range
+INTO #final2 
+FROM #final
+WHERE  rown <@intervals
+
+
+SELECT (pp2.price) , 
+left(transferdate, 7) as dates,
+f2.LOW_Range,
+f2.High_Range,
+f2.postcode 
+INTO #transactions 
+FROM dbo.[pp-complete2] pp2
+INNER JOIN #final2 f2 on f2.PostCode = pp2.PostCode and f2.dates = left(transferdate, 7)
+AND pp2.Price BETWEEN LOW_Range AND High_Range
+WHERE f2.postcode IS NOT NULL
+
+--DETERMINING THE NUMBER OF TRANSACTIONS GROUPED BY DATES, POSTAL CODES AND PRICE RANGES
+SELECT COUNT(price) as numbertransactions,
+dates, 
+LOW_Range,
+High_Range, 
+postcode 
+FROM #transactions
+--  where dates = '1995-02'
+GROUP BY dates, 
+LOW_Range, 
+High_Range, 
+postcode
+ORDER BY dates ASC
+
+DROP TABLE  #maxmin
+ 
+DROP TABLE #limits
+ 
+DROP TABLE #final
+
+DROP TABLE #final2
+
+ 
+DROP TABLE #transactions
+
+ 
+DROP TABLE #recursive
