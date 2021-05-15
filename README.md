@@ -5,9 +5,9 @@ AVG(price) as AVG_PRICE
 ,[PostCode]
    
   
- FROM [Càiniǎo].[dbo].[pp-complete2]
- GROUP BY
- PostCode, 
- TYPE, 
- left(transferdate, 7)
+FROM [Càiniǎo].[dbo].[pp-complete2]
+GROUP BY
+PostCode, 
+TYPE, 
+left(transferdate, 7)
  
