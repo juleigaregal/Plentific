@@ -5,5 +5,5 @@ AVG(price) as AVG_PRICE
 ,[PostCode] AS [POST_CODE]
    
   
- FROM [Càiniǎo].[dbo].[pp-complete2]
+ FROM [Càiniǎo].[dbo].[pp]
  group by PostCode, type, left(transferdate, 7)
