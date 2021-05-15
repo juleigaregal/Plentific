@@ -1,0 +1,9 @@
+use [Càiniǎo]
+
+CREATE TABLE [dbo].[pp] (price int,
+Transferdate varchar(50),
+postcode varchar(50)
+,[type] varchar(50),
+[Town] varchar (50))
+
+--I imported the data into the table the table without using insert, uploaded the excel sheet into the table.
