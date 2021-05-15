@@ -1,3 +1,6 @@
+-- I assumed that price is idependent of the type of property, but ideally, we could include an option for the type. 
+
+
 if object_id('tempdb..#MAXMIN') is not null drop table #MAXMIN
 if object_id('tempdb..#LIMITS') is not null drop table #LIMITS
 if object_id('tempdb..#RECURSIVE') is not null drop table #RECURSIVE
